@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const fastcsv = require("fast-csv");
 const fs = require("fs");
+require('dotenv').config();
+
 
 const cloudinary = require('cloudinary').v2;
 
@@ -11,9 +13,9 @@ const port = 3000;
 
 
 cloudinary.config({
-  cloud_name: 'dufnlygu6',
-  api_key: '995237828687929',
-  api_secret: 'qiTk1nASnDNtZPLGq3d2msH7DsE'
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET
 });
 
 app.use(bodyParser.json());
