@@ -64,7 +64,7 @@ app.get("/", (req, res) => {
 
 
 app.get("/data", async (req, res) => {
-  res.send(websites);
+  res.send(compressed_url);
 });
 
 // Start the server
