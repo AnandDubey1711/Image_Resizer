@@ -12,16 +12,17 @@
         <input type="file" name="image" id="imageInput" accept="image/*" required > 
         <button id="submit">Uplaod Image</button>
     </form>
-
-    <form id="csvUploadForm" enctype="multipart/form-data">
-        <input type="file" name="csvfile" id="csvFileInput" accept=".csv" required>
-        <button type="submit">Upload CSV</button>
-    </form>
-
     
     <h2>Uploaded Image:</h2>
     <p id="uploadedMessage"></p>
   <img id="uploadedImage" src="" alt="Uploaded Image will appear here" style="max-width: 300px; display: none;">
+
+  <h2>Upload a CSV File</h2>
+  <form id="csvUploadForm" enctype="multipart/form-data">
+    <input type="file" name="csvfile" id="csvFileInput" accept=".csv" required>
+    <button type="submit">Upload CSV</button>
+</form>
+
   
   
   <script>
