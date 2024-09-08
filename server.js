@@ -1,15 +1,14 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-const fastcsv = require("fast-csv");
-const fs = require("fs");
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
 
-
-const cloudinary = require('cloudinary').v2;
+const { processCSV } = require('./csv.js'); 
 
 const app = express();
-const port = 3000;
+const PORT = 3000 || process.env.PORT;
 
 
 cloudinary.config({
@@ -21,53 +20,69 @@ cloudinary.config({
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const csv = require("fast-csv");
+// path to provide and handle file from the given path within the root 
+app.use(express.static('public'));
 
-const stream = fs.createReadStream("customers-100.csv");
+// Multer is used for handling the file uplaod and the files uploaded on the local storage are then processed using the endpoints
+const storage = multer.diskStorage({
+  destination: function(req, file, cb){
+    cb(null, 'uploads/');
+  },
+  filename: function(req, file, cb){
+    cb(null, Date.now() +'-' + file.originalname)
+  }
+})
+// this is used to obtain the stored data with the folder 
+const uplaod = multer({storage: storage})
 
-const data = [];
-const websites = [];
-const compressed_url = [];
 
-csv
-  .parseStream(stream, { headers: true })
-  .on("data", (row) => {
-    data.push([row.Index, row.Customer_Id, row.Website]);
-  })
-  .on("end", () => {
-    console.log(data);
-    let uploadPromises = [];
-
-    for (let i = 0; i < 1; i++) {
-      let website = data[i][2];
-      let uploadPromise = cloudinary.uploader.upload(website, {
-        width: 0.5,
-        crop: "scale"
-      }).then(result => {
-        compressed_url.push(result.secure_url);
-      }).catch(error => {
-        console.error('Error uploading image:', error);
-      });
-      
-      uploadPromises.push(uploadPromise);
+// creating the route for at which post request is made after the image is processed and the resized image is provided back to the html 
+app.post("/uplaod_image", uplaod.single('image'), async (req,res)=>{
+  const imagePath = req.file.path;
+  cloudinary.uploader.upload(imagePath, {width: 0.5, crop:'scale'}, (err, result)=>{
+    // In case the code fails the error part handles the exception
+    if(err){
+      console.error("Error uplaoding image",err);
+      return res.status(500).send("Error uploading image")
     }
-
-    Promise.all(uploadPromises).then(() => {
-      console.log('All images processed:', compressed_url);
+    let processed_image_url = result.secure_url;
+    // res.send({message:"Image Proceesed successfully"})
+    res.json({
+      message: 'Image uploaded successfully!', 
+      url: processed_image_url,
     });
-  });
+  })
+})
 
-console.log(websites)
-app.get("/", (req, res) => {
-  res.send("Welcome to the backend application");
+const csvStorage = multer.diskStorage({
+  destination: function(req, file, cb){
+    cb(null, 'csvUploads/');
+  },
+  filename: function(req, file, cb){
+    cb(null, Date.now() +'-' + file.originalname)
+  }
+})
+// this is used to obtain the stored data with the folder 
+const csvUpload = multer({storage: csvStorage})
+
+app.post("/upload-csv", csvUpload.single('csvfile'), async (req, res) => {
+  const csvFilePath = req.file.path; // Get the uploaded CSV file path
+
+  try {
+    // Process CSV file and get the compressed image URLs
+    const compressedUrls = await processCSV(csvFilePath);
+    res.json({
+      message: 'CSV processed and images uploaded successfully!',
+      urls: compressedUrls
+    });
+  } catch (error) {
+    console.error('Error processing CSV:', error);
+    res.status(500).send('Error processing CSV');
+  }
 });
 
 
-app.get("/data", async (req, res) => {
-  res.send(compressed_url);
-});
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+app.listen(PORT, ()=>{
+  console.log(`Server is running on localhost ${PORT}`)
+})

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resizer</title>
+</head>
+<body>
+    <h1>Image Resizing tool</h1>
+    <h2>Upload an Image</h2>
+    <form enctype="multipart/form-data" id="dataForm">
+        <input type="file" name="image" id="imageInput" accept="image/*" required > 
+        <button id="submit">Uplaod Image</button>
+    </form>
+
+    <form id="csvUploadForm" enctype="multipart/form-data">
+        <input type="file" name="csvfile" id="csvFileInput" accept=".csv" required>
+        <button type="submit">Upload CSV</button>
+    </form>
+
+    
+    <h2>Uploaded Image:</h2>
+    <p id="uploadedMessage"></p>
+  <img id="uploadedImage" src="" alt="Uploaded Image will appear here" style="max-width: 300px; display: none;">
+  
+  
+  <script>
+    const form = document.getElementById("dataForm")
+    const uploadImage = document.getElementById("uploadedImage");
+    const uploadedMessage = document.getElementById("uploadedMessage");
+
+    form.addEventListener("submit",(e)=>{
+        e.preventDefault();
+        const formData = new FormData();
+        const fileInput = document.getElementById("imageInput")
+        const file = fileInput.files[0];
+
+        if(file){
+            formData.append('image',file);
+            fetch('/uplaod_image',{
+                method:"POST",
+                body: formData
+            }).then(response => response.json())
+            .then(data =>{
+                uploadImage.src = data.url,
+                uploadedMessage.innerText = data.message,
+                uploadImage.style.display = 'block'
+            })
+            .catch(error=>{
+                console.log("Could not fetch the image ", error)
+            })
+        }
+    })
+  </script>
+
+<script>
+    document.getElementById('csvUploadForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+  
+      const formData = new FormData();
+      const csvFile = document.getElementById('csvFileInput').files[0]; 
+  
+      if (csvFile) {
+        formData.append('csvfile', csvFile);
+  
+        fetch('/upload-csv', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Message:', data.message);
+          console.log('Uploaded URLs:', data.urls);
+        })
+        .catch(error => {
+          console.error('Error uploading CSV:', error);
+        });
+      }
+    });
+  </script>
+</body>
+
+</html>
